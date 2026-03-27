@@ -3,9 +3,9 @@ name: Fortran Analysis
 on:
   push:
     paths:
-      - '**.f90'
-      - '**.f'
-      - '**.for'
+      - "**.f90"
+      - "**.f"
+      - "**.for"
 
 jobs:
   analyze:
@@ -17,13 +17,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install mlflow requests
 
       - name: Run analysis
         env:
-          MLFLOW_URI: http://homelab-mlflow:5000
-          OLLAMA_URI: http://homelab-ollama:11434/api/generate
+          MLFLOW_URI: http://10.73.1.145:5000
+          OLLAMA_URI: http://10.73.1.145:11435/api/generate
         run: python analyze.py
+
