@@ -2,7 +2,7 @@ program hello
   implicit none
   integer :: i, n
   real :: sum
-  n = 11
+  n = 10
   sum = 0.0
   do i = 1, n
     sum = sum + i
