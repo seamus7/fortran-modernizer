@@ -75,11 +75,11 @@ def analyze(code, model_name):
 files = get_fortran_files()
 print(f"Found {len(files)} Fortran file(s)")
 
-for f in files:
-    with open(f) as fh:
-        code = fh.read()
+for model in MODELS:
+    for f in files:
+        with open(f) as fh:
+            code = fh.read()
 
-    for model in MODELS:
         with mlflow.start_run(run_name=f"analyze_{os.path.basename(f)}_{model}"):
             print(f"Analyzing {f} with {model}...")
             analysis, duration, total_duration = analyze(code, model)
