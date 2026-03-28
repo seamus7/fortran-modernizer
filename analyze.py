@@ -12,6 +12,9 @@ mlflow.set_tracking_uri(MLFLOW_URI)
 os.environ["MLFLOW_TRACKING_URI"] = MLFLOW_URI
 mlflow.set_experiment("Fortran_Modernization")
 
+# List of models to analyze with
+MODELS = ["gemma3:27b", "qwen3-coder-next"]
+
 def get_fortran_files():
     return (
         glob.glob("**/*.f90", recursive=True) +
@@ -52,13 +55,13 @@ def has_implicit(code):
     pattern = r'\bimplicit\b'
     return 1 if re.search(pattern, code, re.IGNORECASE) else 0
 
-def analyze(code):
+def analyze(code, model_name):
     prompt = f"Analyze this legacy Fortran for security vulnerabilities and suggest a Python equivalent:\n{code}"
     start = time.time()
     try:
         response = requests.post(
             OLLAMA_URI,
-            json={"model": "gemma3:27b", "prompt": prompt, "stream": False},
+            json={"model": model_name, "prompt": prompt, "stream": False},
             timeout=300,
         )
         response.raise_for_status()
@@ -76,34 +79,35 @@ for f in files:
     with open(f) as fh:
         code = fh.read()
 
-    with mlflow.start_run(run_name=f"analyze_{os.path.basename(f)}"):
-        print(f"Analyzing {f}...")
-        analysis, duration, total_duration = analyze(code)
+    for model in MODELS:
+        with mlflow.start_run(run_name=f"analyze_{os.path.basename(f)}_{model}"):
+            print(f"Analyzing {f} with {model}...")
+            analysis, duration, total_duration = analyze(code, model)
 
-        # Existing metrics
-        mlflow.log_param("model", "gemma3:27b")
-        mlflow.log_param("file", f)
-        mlflow.log_param("hardware", "RTX 5090")
-        mlflow.log_metric("inference_time_sec", duration)
+            # Existing metrics
+            mlflow.log_param("model", model)
+            mlflow.log_param("file", f)
+            mlflow.log_param("hardware", "RTX 5090")
+            mlflow.log_metric("inference_time_sec", duration)
 
-        # New metrics
-        lines_of_code = count_non_empty_non_comment_lines(code)
-        vulnerability_count = count_vulnerability_keywords(analysis)
-        has_goto_flag = has_goto(code)
-        has_common_block_flag = has_common_block(code)
-        has_implicit_flag = has_implicit(code)
-        token_count = total_duration  # total_duration is in nanoseconds, but we'll log as-is per request
+            # New metrics
+            lines_of_code = count_non_empty_non_comment_lines(code)
+            vulnerability_count = count_vulnerability_keywords(analysis)
+            has_goto_flag = has_goto(code)
+            has_common_block_flag = has_common_block(code)
+            has_implicit_flag = has_implicit(code)
+            token_count = total_duration  # total_duration is in nanoseconds, but we'll log as-is per request
 
-        mlflow.log_metric("lines_of_code", lines_of_code)
-        mlflow.log_metric("vulnerability_count", vulnerability_count)
-        mlflow.log_metric("has_goto", has_goto_flag)
-        mlflow.log_metric("has_common_block", has_common_block_flag)
-        mlflow.log_metric("has_implicit", has_implicit_flag)
-        mlflow.log_metric("token_count", token_count)
+            mlflow.log_metric("lines_of_code", lines_of_code)
+            mlflow.log_metric("vulnerability_count", vulnerability_count)
+            mlflow.log_metric("has_goto", has_goto_flag)
+            mlflow.log_metric("has_common_block", has_common_block_flag)
+            mlflow.log_metric("has_implicit", has_implicit_flag)
+            mlflow.log_metric("token_count", token_count)
 
-        report = f"File: {f}\n\n{analysis}"
-        with open("report.txt", "w") as fh:
-            fh.write(report)
+            report = f"File: {f}\n\n{analysis}"
+            with open("report.txt", "w") as fh:
+                fh.write(report)
 
-        mlflow.log_artifact("report.txt")
-        print(f"Done in {duration:.2f}s")
+            mlflow.log_artifact("report.txt")
+            print(f"Done in {duration:.2f}s")
