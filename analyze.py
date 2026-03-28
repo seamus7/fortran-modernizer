@@ -77,7 +77,7 @@ for f in files:
         code = fh.read()
 
     with mlflow.start_run(run_name=f"analyze_{os.path.basename(f)}"):
-        print(f"Analyzing {f}..")
+        print(f"Analyzing {f}...")
         analysis, duration, total_duration = analyze(code)
 
         # Existing metrics
