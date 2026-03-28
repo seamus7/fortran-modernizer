@@ -4,7 +4,6 @@ program hello
   real :: sum
   n = 10
   sum = 0.0
-  ! pipeline comment
   do i = 1, n
     sum = sum + i
   end do
