@@ -9,4 +9,3 @@ program hello
   end do
   print *, "Sum =", sum
 end program hello
-! trigger model comparison
