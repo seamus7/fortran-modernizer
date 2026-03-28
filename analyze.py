@@ -55,6 +55,21 @@ def has_implicit(code):
     pattern = r'\bimplicit\b'
     return 1 if re.search(pattern, code, re.IGNORECASE) else 0
 
+def unload_model(model_name):
+    """Unload a model from Ollama by calling /api/generate with keep_alive: 0"""
+    endpoint = f"{OLLAMA_URI}/api/generate"
+    try:
+        response = requests.post(
+            endpoint,
+            json={"model": model_name, "prompt": "", "stream": False, "keep_alive": 0},
+            timeout=30
+        )
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"Warning: Failed to unload model {model_name}: {e}")
+        return False
+
 def analyze(code, model_name):
     prompt = f"Analyze this legacy Fortran for security vulnerabilities and suggest a Python equivalent:\n{code}"
     start = time.time()
@@ -81,7 +96,7 @@ for model in MODELS:
             code = fh.read()
 
         with mlflow.start_run(run_name=f"analyze_{os.path.basename(f)}_{model}"):
-            print(f"Analyzing {f} with {model}...")
+            print(f"Analyzing {f} with {model}..")
             analysis, duration, total_duration = analyze(code, model)
 
             # Existing metrics
@@ -111,3 +126,6 @@ for model in MODELS:
 
             mlflow.log_artifact("report.txt")
             print(f"Done in {duration:.2f}s")
+    
+    # Unload model after all files for this model are processed
+    unload_model(model)
