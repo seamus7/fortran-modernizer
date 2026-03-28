@@ -16,12 +16,14 @@ mlflow.set_experiment("Fortran_Modernization")
 # List of models to analyze with
 MODELS = ["gemma3:27b", "qwen3-coder-next"]
 
+
 def get_fortran_files():
     return (
-        glob.glob("**/*.f90", recursive=True) +
-        glob.glob("**/*.f", recursive=True) +
-        glob.glob("**/*.for", recursive=True)
+        glob.glob("**/*.f90", recursive=True)
+        + glob.glob("**/*.f", recursive=True)
+        + glob.glob("**/*.for", recursive=True)
     )
+
 
 def count_non_empty_non_comment_lines(code):
     lines = code.splitlines()
@@ -29,9 +31,10 @@ def count_non_empty_non_comment_lines(code):
     for line in lines:
         stripped = line.strip()
         # Skip empty lines and comment lines (starting with C, *, or !)
-        if stripped and not stripped[0].upper() in ['C', '*', '!']:
+        if stripped and not stripped[0].upper() in ["C", "*", "!"]:
             count += 1
     return count
+
 
 def count_vulnerability_keywords(text):
     keywords = ["vulnerability", "risk", "overflow", "unsafe", "deprecated"]
@@ -41,20 +44,24 @@ def count_vulnerability_keywords(text):
         count += text_lower.count(keyword)
     return count
 
+
 def has_goto(code):
     # Match GOTO statements (case-insensitive)
-    pattern = r'\bgoto\b'
+    pattern = r"\bgoto\b"
     return 1 if re.search(pattern, code, re.IGNORECASE) else 0
+
 
 def has_common_block(code):
     # Match COMMON blocks (case-insensitive)
-    pattern = r'\bcommon\b'
+    pattern = r"\bcommon\b"
     return 1 if re.search(pattern, code, re.IGNORECASE) else 0
+
 
 def has_implicit(code):
     # Match IMPLICIT statements (case-insensitive)
-    pattern = r'\bimplicit\b'
+    pattern = r"\bimplicit\b"
     return 1 if re.search(pattern, code, re.IGNORECASE) else 0
+
 
 def unload_model(model_name):
     """Unload a model from Ollama by calling /api/generate with keep_alive: 0"""
@@ -63,13 +70,14 @@ def unload_model(model_name):
         response = requests.post(
             endpoint,
             json={"model": model_name, "prompt": "", "stream": False, "keep_alive": 0},
-            timeout=30
+            timeout=30,
         )
         response.raise_for_status()
         return True
     except Exception as e:
         print(f"Warning: Failed to unload model {model_name}: {e}")
         return False
+
 
 def analyze(code, model_name):
     prompt = f"Analyze this legacy Fortran for security vulnerabilities and suggest a Python equivalent:\n{code}"
@@ -87,6 +95,7 @@ def analyze(code, model_name):
         return analysis, time.time() - start, total_duration
     except Exception as e:
         return f"Error: {e}", 0, 0
+
 
 files = get_fortran_files()
 print(f"Found {len(files)} Fortran file(s)")
@@ -127,6 +136,7 @@ for model in MODELS:
 
             mlflow.log_artifact("report.txt")
             print(f"Done in {duration:.2f}s")
-    
+
     # Unload model after all files for this model are processed
+    time.sleep(5)
     unload_model(model)
