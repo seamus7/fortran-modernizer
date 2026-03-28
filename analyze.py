@@ -7,6 +7,7 @@ import re
 
 MLFLOW_URI = os.environ["MLFLOW_URI"]
 OLLAMA_URI = os.environ["OLLAMA_URI"]
+OLLAMA_BASE_URI = OLLAMA_URI.replace("/api/generate", "")
 
 mlflow.set_tracking_uri(MLFLOW_URI)
 os.environ["MLFLOW_TRACKING_URI"] = MLFLOW_URI
@@ -57,7 +58,7 @@ def has_implicit(code):
 
 def unload_model(model_name):
     """Unload a model from Ollama by calling /api/generate with keep_alive: 0"""
-    endpoint = f"{OLLAMA_URI}/api/generate"
+    endpoint = f"{OLLAMA_BASE_URI}/api/generate"
     try:
         response = requests.post(
             endpoint,
@@ -96,7 +97,7 @@ for model in MODELS:
             code = fh.read()
 
         with mlflow.start_run(run_name=f"analyze_{os.path.basename(f)}_{model}"):
-            print(f"Analyzing {f} with {model}..")
+            print(f"Analyzing {f} with {model}...")
             analysis, duration, total_duration = analyze(code, model)
 
             # Existing metrics
