@@ -9,5 +9,4 @@ program hello
   end do
   print *, "Sum =", sum
 end program hello
-! trigger k8s pipeline
-! trigger k8s pipeline
+! DinD successful - after qwen pull
