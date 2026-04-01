@@ -9,6 +9,5 @@ program hello
   end do
   print *, "Sum =", sum
 end program hello
-! test unload 2 - pulled qwen
 ! trigger k8s pipeline
 ! trigger k8s pipeline
